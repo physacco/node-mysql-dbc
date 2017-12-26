@@ -1,0 +1,22 @@
+{
+  "name": "mysql-dbc",
+  "version": "1.0.0",
+  "description": "MySQL client library.",
+  "author": "physacco <physacco@gmail.com>",
+  "license": "MIT",
+  "repository": "physacco/node-mysql-dbc",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "mysql2": "^1.4.1"
+  },
+  "keywords": [
+    "mysql",
+    "client"
+  ],
+  "engines": {
+    "node": ">= 8.0"
+  }
+}
