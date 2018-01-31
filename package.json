@@ -1,6 +1,6 @@
 {
   "name": "mysql-dbc",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MySQL client library.",
   "author": "physacco <physacco@gmail.com>",
   "license": "MIT",
