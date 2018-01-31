@@ -1,17 +1,5 @@
 const mysql = require('mysql2/promise');
 
-const Pooler = {
-  pool: null,
-
-  getPool: function () {
-    if (!this.pool) {
-      throw new Error('database not connected');
-    }
-
-    return this.pool;
-  }
-};
-
 class RollbackError extends Error {
   constructor(message) {
     super(message);
@@ -21,13 +9,13 @@ class RollbackError extends Error {
 }
 
 class Connection {
-  static async new() {
-    const conn = await Pooler.getPool().getConnection();
+  static async new(pooler) {
+    const conn = await pooler.getPool().getConnection();
     return new Connection(conn);
   }
 
-  static async run(func, args) {
-    const conn = await Connection.new();
+  static async run(pooler, func, args) {
+    const conn = await Connection.new(pooler);
 
     try {
       return await func.apply(conn, args);
@@ -257,6 +245,24 @@ function getInfo(result) {
   return resultSetHeader;
 }
 
+function Dbc() {
+  this.Pooler = {
+    pool: null,
+
+    getPool: function () {
+      if (!this.pool) {
+        throw new Error('database not connected');
+      }
+
+      return this.pool;
+    },
+
+    setPool: function (pool) {
+      this.pool = pool;
+    }
+  };
+}
+
 /**
  * Initialize the connection pool.
  * @param {Object} info: e.g. {
@@ -268,28 +274,30 @@ function getInfo(result) {
  * }
  * @returns undefined
  */
-function init(info) {
+Dbc.prototype.init = function (info) {
   const poolConfig = Object.assign({
     connectionLimit: 20,
     queueLimit: 10
   }, info);
 
-  Pooler.pool = mysql.createPool(poolConfig);
-}
+  this.Pooler.setPool(mysql.createPool(poolConfig));
+};
 
 /**
  * Function wrapper.
- * fn has these properties:
- * 1. it is a normal/async function
- * 2. it returns a Promise instance
- * 3. the variable `this' is a Connection
- * 4. it can be wrapped with withConnection
+ * fn具有以下性质：
+ * 1. 是普通函数，不是星号函数
+ * 2. 返回一个 Promise 实例
+ * 3. this 是一个 Connection 实例
+ * 4. 可以用 withConnection 包装
  */
-function withConnection(fn) {
+Dbc.prototype.withConnection = function (fn) {
+  const pooler = this.Pooler;
   return function () {
-    return Connection.run(fn, arguments);
+    return Connection.run(pooler, fn, arguments);
   };
-}
+};
 
-exports.init = init;
-exports.withConnection = withConnection;
+exports.createDbc = function () {
+  return new Dbc();
+};
